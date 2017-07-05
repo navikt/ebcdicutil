@@ -19,17 +19,16 @@
 	</properties>
 
 	<dependencies>
-
-
 		<dependency>
 			<groupId>net.sf.jt400</groupId>
 			<artifactId>jt400</artifactId>
 			<version>9.3</version>
 		</dependency>
-
 	</dependencies>
 
-
-
-
+	<scm>
+		<connection>scm:git:ssh://git@stash.devillo.no:7999/teampesys/ebcdicutil.git</connection>
+		<developerConnection>scm:git:ssh://git@stash.devillo.no:7999/teampesys/ebcdicutil.git</developerConnection>
+		<tag>HEAD</tag>
+	</scm>
 </project>
