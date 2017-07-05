@@ -28,7 +28,6 @@ node {
     stage("release") {
         sh "${mvn} versions:set -B -DnewVersion=${releaseVersion} -DgenerateBackupPoms=false"
         sh "git commit -am 'Commit before creating tag ${application}-${releaseVersion}, by ${committer}'"
-        sh "git push origin master"
         sh "${mvn} clean deploy scm:tag -DskipTests -B -e"
     }
 
