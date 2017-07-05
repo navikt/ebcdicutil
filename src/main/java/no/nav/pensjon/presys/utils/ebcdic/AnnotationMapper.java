@@ -57,6 +57,8 @@ public class AnnotationMapper {
             return padLeft(unpacked.toString(), unpackedWith, "0");
         } else if (type.equals(Integer.TYPE)) {
             return unpacked.intValue();
+        } else if (type.equals(BigDecimal.class)){
+            return unpacked;
         }
         return null;
     }
