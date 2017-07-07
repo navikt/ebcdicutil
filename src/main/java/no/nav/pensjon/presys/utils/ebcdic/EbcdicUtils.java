@@ -13,8 +13,8 @@ public class EbcdicUtils {
         return (BigDecimal) new AS400PackedDecimal(unpackedLength, decimals).toObject(packed);
     }
 
-    public static byte[] pack(BigDecimal unpacked, int length) {
-        AS400PackedDecimal packedDecimal = new AS400PackedDecimal(length, 0);
+    public static byte[] pack(BigDecimal unpacked, int length, int decimals) {
+        AS400PackedDecimal packedDecimal = new AS400PackedDecimal(length, decimals);
         return packedDecimal.toBytes(unpacked);
     }
 

@@ -52,9 +52,14 @@ public class AnnotationMapper {
 
     private static Object mapPackedDecimalToObject(byte[] feltData, Felt ta, PackedDecimal pda, Class<?> type) {
         int unpackedWith = (ta.length() * 2) - 1;
-        BigDecimal unpacked = EbcdicUtils.unpack(feltData, unpackedWith, pda.decimals());
+        BigDecimal unpacked;
+        try{
+            unpacked = EbcdicUtils.unpack(feltData, unpackedWith, pda.decimals());
+        } catch (NumberFormatException nfe){
+            throw new RuntimeException("Feilet ved lesing av felt " +ta.name() , nfe);
+        }
         if (type.equals(String.class)) {
-            return padLeft(unpacked.toString(), unpackedWith, "0");
+            return padLeft(unpacked.toString(), unpackedWith);
         } else if (type.equals(Integer.TYPE)) {
             return unpacked.intValue();
         } else if (type.equals(BigDecimal.class)){
@@ -96,20 +101,23 @@ public class AnnotationMapper {
         for (Field f : fields) {
             if (f.isAnnotationPresent(Felt.class)) {
                 Felt ta = f.getAnnotation(Felt.class);
-
                 byte[] feltData = new byte[ta.length()];
 
                 if (f.isAnnotationPresent(PackedDecimal.class)) {
+                    BigDecimal value;
                     if (f.getType().equals(String.class)) {
-                        feltData =  EbcdicUtils.pack(new BigDecimal(Double.parseDouble(getGetter(f).invoke(o).toString())), ta.length() * 2 - 1);
-
+                        value = new BigDecimal(Double.parseDouble(getGetter(f).invoke(o).toString()));
                     } else if (f.getType().equals(Integer.TYPE)) {
-                        feltData =  EbcdicUtils.pack(new BigDecimal((int) getGetter(f).invoke(o)), ta.length() * 2 - 1);
+                        value = new BigDecimal((int) getGetter(f).invoke(o));
+                    } else{
+                        value = BigDecimal.ZERO;
                     }
+                    feltData =  EbcdicUtils.pack(value, ta.length() * 2 - 1, f.getAnnotation(PackedDecimal.class).decimals() );
+
                 } else if (f.getType().equals(String.class)) {
                     byte[] tmp = getGetter(f).invoke(o).toString().getBytes(EbcdicUtils.EBCDIC_CHARSET);
-                    for(int i = 0; i<feltData.length && i< tmp.length;i++){
-                        feltData[i] = tmp[i];
+                    for(int i = 0; i<feltData.length ;i++){
+                            feltData[i] = i< tmp.length ? tmp[i]: " ".getBytes(EbcdicUtils.EBCDIC_CHARSET)[0];
                     }
                 } else if (f.getType().equals(Integer.TYPE)) {
                     ByteBuffer buf = ByteBuffer.allocate(2);
@@ -136,11 +144,13 @@ public class AnnotationMapper {
         }
     }
 
-    private static String padLeft(String oldString, int newLength, String padding){
-        while(oldString.length()<newLength){
-            oldString = padding+oldString;
+    private static String padLeft(String oldString, int newLength){
+        StringBuilder sb = new StringBuilder();
+        while(sb.length() + oldString.length() < newLength){
+            sb.append("0");
         }
-        return oldString;
+        sb.append(oldString);
+        return sb.toString();
     }
 
     private static Method getSetter(Field f) {
