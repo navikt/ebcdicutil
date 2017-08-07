@@ -53,8 +53,8 @@
 	</build>
 
 	<scm>
-		<connection>scm:git:ssh://git@stash.devillo.no:7999/teampesys/ebcdicutil.git</connection>
-		<developerConnection>scm:git:ssh://git@stash.devillo.no:7999/teampesys/ebcdicutil.git</developerConnection>
+		<connection>scm:git:https://github.com/navikt/ebcdicutil.git</connection>
+		<developerConnection>scm:git:https://github.com/navikt/ebcdicutil.git</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 </project>

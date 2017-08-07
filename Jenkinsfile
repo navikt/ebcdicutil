@@ -9,7 +9,7 @@ node {
     def mvn = "${mvnHome}/bin/mvn"
 
     stage("checkout") {
-        git url: "ssh://git@stash.devillo.no:7999/${project}/${application}.git"
+        git url: "https://github.com/navikt/ebcdicutil.git"
     }
 
     stage("initialize") {
@@ -34,7 +34,10 @@ node {
     stage("new dev version") {
         sh "${mvn} versions:set -B -DnewVersion=${nextVersion} -DgenerateBackupPoms=false"
         sh "git commit -am 'Updated version after release by ${committer}'"
-        sh "git push origin master"
+
+        withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'navikt-jenkins-github', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD']]) {
+            sh("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/navikt/ebcdicutil.git master")
+        }
     }
 
 }
