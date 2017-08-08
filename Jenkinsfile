@@ -7,8 +7,18 @@ node {
     def mvnHome = tool "maven-3.3.9"
     def mvn = "${mvnHome}/bin/mvn"
 
+    // delete whole workspace before starting the build,
+    // so that the 'git clone' command below doesn't fail due to
+    // directory not being empty
+    cleanWs()
+
     stage("checkout") {
-        git url: "https://github.com/navikt/ebcdicutil.git"
+        // we are cloning the repository manually, because the standard 'git' and 'checkout' steps
+        // infer with the Git polling that Jenkins already does (when polling for changes to the
+        // repo containing the Jenkinsfile).
+        withEnv(['HTTPS_PROXY=http://webproxy-utvikler.nav.no:8088']) {
+                    sh(script: "git clone https://github.com/navikt/ebcdicutil.git .")
+        }
     }
 
     stage("initialize") {
