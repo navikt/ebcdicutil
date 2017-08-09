@@ -26,8 +26,8 @@ node {
             commitHashShort = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
             commitUrl = "https://github.com/${project}/${project}/commit/${commitHash}"
 
-            /* gets the person who committed last as "Surname, First name (email@domain.tld) */
-            committer = sh(script: 'git log -1 --pretty=format:"%an (%ae)"', returnStdout: true).trim()
+            /* gets the person who committed last as "Surname, First name" */
+            committer = sh(script: 'git log -1 --pretty=format:"%an"', returnStdout: true).trim()
 
             notifyGithub("${project}", "${application}", "${commitHash}", 'pending', "Build #${env.BUILD_NUMBER} has started")
         }
