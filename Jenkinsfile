@@ -1,4 +1,5 @@
 node {
+    def project = "navikt"
     def application = "ebcdicutil"
 
     /* metadata */
@@ -22,8 +23,13 @@ node {
             }
 
             commitHash = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+            commitHashShort = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+            commitUrl = "https://github.com/${project}/${project}/commit/${commitHash}"
 
-            notifyGithub("navikt", "${application}", "${commitHash}", 'pending', "Build #${env.BUILD_NUMBER} has started")
+            /* gets the person who committed last as "Surname, First name (email@domain.tld) */
+            committer = sh(script: 'git log -1 --pretty=format:"%an (%ae)"', returnStdout: true).trim()
+
+            notifyGithub("${project}", "${application}", "${commitHash}", 'pending', "Build #${env.BUILD_NUMBER} has started")
         }
 
         stage("initialize") {
@@ -56,9 +62,18 @@ node {
             }
         }
 
-        notifyGithub("navikt", "${application}", "${commitHash}", 'success', "Build #${env.BUILD_NUMBER} has finished")
+        notifyGithub("${project}", "${application}", "${commitHash}", 'success', "Build #${env.BUILD_NUMBER} has finished")
+        slackSend([
+            color: 'good',
+            message: "Build <${env.BUILD_URL}|#${env.BUILD_NUMBER}> (<${commitUrl}|${commitHashShort}>) of ${project}/${application}@master by ${committer} passed"
+        ])
     } catch (e) {
-        notifyGithub("navikt", "${application}", "${commitHash}", 'failure', "Build #${env.BUILD_NUMBER} has failed")
+        notifyGithub("${project}", "${application}", "${commitHash}", 'failure', "Build #${env.BUILD_NUMBER} has failed")
+
+        slackSend([
+            color: 'danger',
+            message: "Build <${env.BUILD_URL}|#${env.BUILD_NUMBER}> (<${commitUrl}|${commitHashShort}>) of ${project}/${application}@master by ${committer} failed"
+        ])
 
         throw e
     }
