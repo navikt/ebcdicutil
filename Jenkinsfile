@@ -44,20 +44,27 @@ node {
 
         stage("release") {
             sh "${mvn} versions:set -B -DnewVersion=${releaseVersion} -DgenerateBackupPoms=false"
-            sh "git commit -am 'Commit before creating tag ${application}-${releaseVersion} [ci skip]'"
-
-            withEnv(['HTTPS_PROXY=http://webproxy-utvikler.nav.no:8088']) {
-                sh "${mvn} clean deploy scm:tag -DskipTests -B -e"
-            }
-        }
-
-        stage("new dev version") {
-            sh "${mvn} versions:set -B -DnewVersion=${nextVersion} -DgenerateBackupPoms=false"
-            sh "git commit -am 'Updated version after release [ci skip]'"
+            sh "git add '*pom.xml'"
+            sh "git commit -m 'Commit before creating tag ${application}-${releaseVersion}'"
+            sh "git tag -a '${application}-${releaseVersion}' -m '${application}-${releaseVersion}'"
 
             withEnv(['HTTPS_PROXY=http://webproxy-utvikler.nav.no:8088']) {
                 withCredentials([string(credentialsId: 'navikt-jenkins-oauthtoken', variable: 'GITHUB_OAUTH_TOKEN')]) {
-                    sh("git push https://navikt-jenkins:${GITHUB_OAUTH_TOKEN}@github.com/navikt/ebcdicutil.git master")
+                    sh("git push --tags https://navikt-jenkins:${GITHUB_OAUTH_TOKEN}@github.com/navikt/${application}.git master")
+                }
+            }
+
+            withEnv(['HTTPS_PROXY=http://webproxy-utvikler.nav.no:8088']) {
+                sh "${mvn} clean deploy -DskipTests -B -e"
+            }
+
+            sh "${mvn} versions:set -B -DnewVersion=${nextVersion} -DgenerateBackupPoms=false"
+            sh "git add '*pom.xml'"
+            sh "git commit -m 'Updated version to ${nextVersion} after release'"
+
+            withEnv(['HTTPS_PROXY=http://webproxy-utvikler.nav.no:8088']) {
+                withCredentials([string(credentialsId: 'navikt-jenkins-oauthtoken', variable: 'GITHUB_OAUTH_TOKEN')]) {
+                    sh("git push https://navikt-jenkins:${GITHUB_OAUTH_TOKEN}@github.com/navikt/${application}.git master")
                 }
             }
         }
