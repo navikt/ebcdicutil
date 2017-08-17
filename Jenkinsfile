@@ -56,8 +56,8 @@ node {
             sh "git commit -am 'Updated version after release [ci skip]'"
 
             withEnv(['HTTPS_PROXY=http://webproxy-utvikler.nav.no:8088']) {
-                withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'navikt-jenkins-github', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD']]) {
-                    sh("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/navikt/ebcdicutil.git master")
+                withCredentials([string(credentialsId: 'navikt-jenkins-oauthtoken', variable: 'GITHUB_OAUTH_TOKEN')]) {
+                    sh("git push https://$navikt-jenkins:${GITHUB_OAUTH_TOKEN}@github.com/navikt/ebcdicutil.git master")
                 }
             }
         }
