@@ -57,7 +57,7 @@ node {
 
             withEnv(['HTTPS_PROXY=http://webproxy-utvikler.nav.no:8088']) {
                 withCredentials([string(credentialsId: 'navikt-jenkins-oauthtoken', variable: 'GITHUB_OAUTH_TOKEN')]) {
-                    sh("git push https://$navikt-jenkins:${GITHUB_OAUTH_TOKEN}@github.com/navikt/ebcdicutil.git master")
+                    sh("git push https://navikt-jenkins:${GITHUB_OAUTH_TOKEN}@github.com/navikt/ebcdicutil.git master")
                 }
             }
         }
