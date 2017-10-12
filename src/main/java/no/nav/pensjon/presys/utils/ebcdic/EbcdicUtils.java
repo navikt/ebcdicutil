@@ -4,25 +4,29 @@ import com.ibm.as400.access.AS400PackedDecimal;
 
 import java.io.*;
 import java.math.BigDecimal;
+import java.nio.charset.IllegalCharsetNameException;
 
-public class EbcdicUtils {
+class EbcdicUtils {
+    static final String EBCDIC_CHARSET = "Cp1142";
 
-    public static final String EBCDIC_CHARSET = "Cp1142";
+    private EbcdicUtils(){
+    }
 
-    public static BigDecimal unpack(byte[] packed, int unpackedLength, int decimals){
+    static BigDecimal unpack(byte[] packed, int unpackedLength, int decimals){
         return (BigDecimal) new AS400PackedDecimal(unpackedLength, decimals).toObject(packed);
     }
 
-    public static byte[] pack(BigDecimal unpacked, int length, int decimals) {
+    static byte[] pack(BigDecimal unpacked, int length, int decimals) {
         AS400PackedDecimal packedDecimal = new AS400PackedDecimal(length, decimals);
         return packedDecimal.toBytes(unpacked);
     }
 
-    public static String getString(byte[] Cp1047bytes){
+    static String getString(byte[] cp1047bytes){
         try {
-            return new String(Cp1047bytes, EBCDIC_CHARSET);
+            return new String(cp1047bytes, EBCDIC_CHARSET);
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
     }
+
 }
