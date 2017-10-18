@@ -91,7 +91,7 @@ node {
         githubNotify([
                 credentialsId: 'navikt-ci',
                 account: project,
-                repo: repoName,
+                repo: application,
                 sha: commitHash,
                 status: 'SUCCESS',
                 description: "Build #${env.BUILD_NUMBER} has finished",
@@ -106,7 +106,7 @@ node {
         githubNotify([
                 credentialsId: 'navikt-ci',
                 account: project,
-                repo: repoName,
+                repo: application,
                 sha: commitHash,
                 status: 'FAILURE',
                 description: "Build #${env.BUILD_NUMBER} has failed",
