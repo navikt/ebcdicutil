@@ -49,7 +49,11 @@ class Unmarshaller {
         } else if (f.isAnnotationPresent(BitTabell.class)) {
             valueToSet = BitTabell2BoolArray.toBoolean(feltData);
         } else if (f.getType().equals(String.class)) {
-            valueToSet = EbcdicUtils.getString(feltData);
+            if(feltData.length == 1 && feltData[0] == 0){
+                valueToSet="";
+            }else {
+                valueToSet = EbcdicUtils.getString(feltData);
+            }
         } else if (f.getType().equals(Integer.TYPE)) {
             valueToSet = ByteBuffer.wrap(feltData).getShort();
         }
@@ -85,7 +89,8 @@ class Unmarshaller {
         T o = mapData(data.read(m.getDatalengde()), segmentToMap);
         Segment seg = segmentToMap.getAnnotation(Segment.class);
         if(seg.length() != m.getDatalengde()){
-            LOGGER.warn("Avvik på datalengde i Segment:%s. Metadata:%o Segmentbeskrivelse:%o", seg.name(),m.getDatalengde(), seg.length());
+            String segmentname = seg.name();
+            LOGGER.warn("Avvik på datalengde i Segment:%s. Metadata:%o Segmentbeskrivelse:%o", segmentname,m.getDatalengde(), seg.length());
         }
 
         if((m.getMetalengde() + m.getDatalengde()) % 2 == 1){
