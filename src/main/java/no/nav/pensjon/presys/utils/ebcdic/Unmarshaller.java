@@ -49,15 +49,21 @@ class Unmarshaller {
         } else if (f.isAnnotationPresent(BitTabell.class)) {
             valueToSet = BitTabell2BoolArray.toBoolean(feltData);
         } else if (f.getType().equals(String.class)) {
-            if(feltData.length == 1 && feltData[0] == 0){
+            if(onlyEmptyBytes(feltData)){
                 valueToSet="";
             }else {
-                valueToSet = EbcdicUtils.getString(feltData);
+                valueToSet = EbcdicUtils.getString(feltData).trim();
             }
         } else if (f.getType().equals(Integer.TYPE)) {
             valueToSet = ByteBuffer.wrap(feltData).getShort();
         }
         return Optional.ofNullable(valueToSet);
+    }
+
+    private static boolean onlyEmptyBytes(byte[] array){
+        for (byte b : array)
+            if(b!=0) return false;
+        return true;
     }
 
     private static Object mapPackedDecimalToObject(byte[] feltData, Felt ta, PackedDecimal pda, Class<?> type) {
