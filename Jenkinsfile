@@ -1,3 +1,6 @@
+#!/usr/bin/env groovy
+@Library('peon-pipeline') _
+
 node {
     def project = "navikt"
     def application = "ebcdicutil"
@@ -26,7 +29,7 @@ node {
             /* gets the person who committed last as "Surname, First name" */
             committer = sh(script: 'git log -1 --pretty=format:"%an"', returnStdout: true).trim()
 
-            notifyGithub(project, application, 'continuous-integration/jenkins', commitHash, 'pending', "Build #${env.BUILD_NUMBER} has started")
+            github.commitStatus("navikt-ci-oauthtoken", "navikt/ebcdicutil", 'continuous-integration/jenkins', commitHash, 'pending', "Build #${env.BUILD_NUMBER} has started")
         }
 
         stage("initialize") {
@@ -66,40 +69,18 @@ node {
             }
         }
 
-        notifyGithub(project, application, 'continuous-integration/jenkins', commitHash, 'success', "Build #${env.BUILD_NUMBER} has finished")
+        github.commitStatus("navikt-ci-oauthtoken", "navikt/ebcdicutil", 'continuous-integration/jenkins', commitHash, 'success', "Build #${env.BUILD_NUMBER} has finished")
         slackSend([
             color: 'good',
             message: "Build <${env.BUILD_URL}|#${env.BUILD_NUMBER}> (<${commitUrl}|${commitHashShort}>) of ${project}/${application}@master by ${committer} passed"
         ])
     } catch (e) {
-        notifyGithub(project, application, 'continuous-integration/jenkins', commitHash, 'failure', "Build #${env.BUILD_NUMBER} has failed")
+        github.commitStatus("navikt-ci-oauthtoken", "navikt/ebcdicutil", 'continuous-integration/jenkins', commitHash, 'failure', "Build #${env.BUILD_NUMBER} has failed")
         slackSend([
             color: 'danger',
             message: "Build <${env.BUILD_URL}|#${env.BUILD_NUMBER}> (<${commitUrl}|${commitHashShort}>) of ${project}/${application}@master by ${committer} failed"
         ])
 
         throw e
-    }
-}
-
-def notifyGithub(owner, repo, context, sha, state, description) {
-    def postBody = [
-            state: "${state}",
-            context: "${context}",
-            description: "${description}",
-            target_url: "${env.BUILD_URL}"
-    ]
-    def postBodyString = groovy.json.JsonOutput.toJson(postBody)
-
-    withEnv(['HTTPS_PROXY=http://webproxy-utvikler.nav.no:8088']) {
-        withCredentials([string(credentialsId: 'navikt-ci-oauthtoken', variable: 'GITHUB_OAUTH_TOKEN')]) {
-            sh """
-                curl -H 'Authorization: token ${GITHUB_OAUTH_TOKEN}' \
-                    -H 'Content-Type: application/json' \
-                    -X POST \
-                    -d '${postBodyString}' \
-                    'https://api.github.com/repos/${owner}/${repo}/statuses/${sha}'
-            """
-        }
     }
 }
