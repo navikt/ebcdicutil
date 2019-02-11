@@ -82,7 +82,10 @@ class Marshaller {
     private static byte[] objectAsPackedDecimal(Field f, Object o, Felt ta){
         BigDecimal value;
         if (f.getType().equals(String.class)) {
-            value = BigDecimal.valueOf(Double.parseDouble(o.toString()));
+            if(o.toString().contains("."))
+                value = BigDecimal.valueOf(Double.parseDouble(o.toString()));
+            else
+                value = BigDecimal.valueOf(Integer.parseInt(o.toString()));
         } else if (f.getType().equals(Integer.TYPE)) {
             value = new BigDecimal((int) o);
         } else{
