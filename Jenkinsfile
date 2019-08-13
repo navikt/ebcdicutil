@@ -14,6 +14,9 @@ pipeline {
             steps {
                 script {
                     latestStage = env.STAGE_NAME
+                    cleanWs()
+                }
+                script {
                     sh "git init"
                     sh "git pull https://x-access-token:${env.APP_TOKEN}@github.com/navikt/${env.APP_NAME}.git"
                     env.COMMIT_HASH_LONG = sh(script: "git rev-parse HEAD", returnStdout: true).trim()
@@ -25,6 +28,7 @@ pipeline {
         stage("build") {
             steps {
                 script {
+                    latestStage = env.STAGE_NAME
                     pom = readMavenPom file: 'pom.xml'
                     releaseVersion = pom.version.tokenize("-")[0]
                     nextVersion = (releaseVersion.toInteger() + 1) + "-SNAPSHOT"
@@ -43,12 +47,6 @@ pipeline {
                     withEnv(["PATH+MAVEN=${MAVEN_HOME}/bin"]) {
                         sh "mvn versions:set -B -DnewVersion=${releaseVersion} -DgenerateBackupPoms=false"
                     }
-                }
-                script {
-                    sh "git add '*pom.xml'"
-                    sh "git commit -m 'Commit before creating tag ${APP_NAME}-${releaseVersion}'"
-                    sh "git tag -a '${APP_NAME}-${releaseVersion}' -m '${APP_NAME}-${releaseVersion}'"
-                    sh "git push --tags https://x-access-token:${env.APP_TOKEN}@github.com/navikt/${env.APP_NAME}.git master"
                 }
                 script {
                     withEnv(["PATH+MAVEN=${MAVEN_HOME}/bin"]) {
