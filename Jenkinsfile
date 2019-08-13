@@ -57,7 +57,8 @@ pipeline {
                 script {
                     sh "git add '*pom.xml'"
                     sh "git commit -m 'Updated version to ${nextVersion} after release'"
-                    sh "git push https://x-access-token:${env.APP_TOKEN}@github.com/navikt/${env.APP_NAME}.git master"
+                    sh "git tag -a '${APP_NAME}-${releaseVersion}' -m '${APP_NAME}-${releaseVersion}'"
+                    sh "git push --tags https://x-access-token:${env.APP_TOKEN}@github.com/navikt/${env.APP_NAME}.git master"
                 }
             }
         }
