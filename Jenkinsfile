@@ -1,86 +1,82 @@
-#!/usr/bin/env groovy
 @Library('peon-pipeline') _
 
-node {
-    def project = "navikt"
-    def application = "ebcdicutil"
+pipeline {
+    agent any
 
-    /* metadata */
-    def commitHash, pom, releaseVersion, nextVersion
+    environment {
+        APP_NAME 	= "ebcdicutil"
+        APP_TOKEN   = github.generateAppToken()
+        MAVEN_HOME  = tool "maven-3.3.9"
+    }
 
-    def mvnHome = tool "maven-3.3.9"
-
-    try {
-        // delete whole workspace before starting the build,
-        // so that the 'git clone' command below doesn't fail due to
-        // directory not being empty
-        cleanWs()
-
+    stages {
         stage("checkout") {
-            withCredentials([string(credentialsId: 'navikt-ci-oauthtoken', variable: 'GITHUB_OAUTH_TOKEN')]) {
-                sh "git init"
-                sh "git pull https://${GITHUB_OAUTH_TOKEN}:x-oauth-basic@github.com/navikt/ebcdicutil.git"
+            steps {
+                script {
+                    latestStage = env.STAGE_NAME
+                    sh "git init"
+                    sh "git pull https://x-access-token:${env.APP_TOKEN}@github.com/navikt/${env.APP_NAME}.git"
+                    env.COMMIT_HASH_LONG = sh(script: "git rev-parse HEAD", returnStdout: true).trim()
+                    env.COMMIT_HASH_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    github.commitStatus("pending", "navikt/$env.APP_NAME", env.APP_TOKEN, env.COMMIT_HASH_LONG)
+                }
             }
-
-            commitHash = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
-            commitHashShort = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-            commitUrl = "https://github.com/${project}/${project}/commit/${commitHash}"
-
-            /* gets the person who committed last as "Surname, First name" */
-            committer = sh(script: 'git log -1 --pretty=format:"%an"', returnStdout: true).trim()
-
-            github.commitStatus("navikt-ci-oauthtoken", "navikt/ebcdicutil", 'continuous-integration/jenkins', commitHash, 'pending', "Build #${env.BUILD_NUMBER} has started")
         }
-
-        stage("initialize") {
-            pom = readMavenPom file: 'pom.xml'
-            releaseVersion = pom.version.tokenize("-")[0]
-            nextVersion = (releaseVersion.toInteger() + 1) + "-SNAPSHOT"
-        }
-
         stage("build") {
-            withEnv(["PATH+MAVEN=${mvnHome}/bin"]) {
-                sh "mvn clean verify -Djava.io.tmpdir=/tmp/${application} -B -e"
+            steps {
+                script {
+                    pom = readMavenPom file: 'pom.xml'
+                    releaseVersion = pom.version.tokenize("-")[0]
+                    nextVersion = (releaseVersion.toInteger() + 1) + "-SNAPSHOT"
+                }
+                script {
+                    withEnv(["PATH+MAVEN=${MAVEN_HOME}/bin"]) {
+                        sh "mvn clean verify -Djava.io.tmpdir=/tmp/${APP_NAME} -B -e"
+                    }
+                }
             }
         }
-
         stage("release") {
-            withEnv(["PATH+MAVEN=${mvnHome}/bin"]) {
-                sh "mvn versions:set -B -DnewVersion=${releaseVersion} -DgenerateBackupPoms=false"
-            }
-            sh "git add '*pom.xml'"
-            sh "git commit -m 'Commit before creating tag ${application}-${releaseVersion}'"
-            sh "git tag -a '${application}-${releaseVersion}' -m '${application}-${releaseVersion}'"
-
-            withCredentials([string(credentialsId: 'navikt-ci-oauthtoken', variable: 'GITHUB_OAUTH_TOKEN')]) {
-                sh "git push --tags https://navikt-ci:${GITHUB_OAUTH_TOKEN}@github.com/navikt/${application}.git master"
-            }
-
-            withEnv(["PATH+MAVEN=${mvnHome}/bin"]) {
-                sh "mvn clean deploy -DskipTests -B -e"
-                sh "mvn versions:set -B -DnewVersion=${nextVersion} -DgenerateBackupPoms=false"
-            }
-
-            sh "git add '*pom.xml'"
-            sh "git commit -m 'Updated version to ${nextVersion} after release'"
-
-            withCredentials([string(credentialsId: 'navikt-ci-oauthtoken', variable: 'GITHUB_OAUTH_TOKEN')]) {
-                sh "git push https://navikt-ci:${GITHUB_OAUTH_TOKEN}@github.com/navikt/${application}.git master"
+            steps {
+                script {
+                    latestStage = env.STAGE_NAME
+                    withEnv(["PATH+MAVEN=${MAVEN_HOME}/bin"]) {
+                        sh "mvn versions:set -B -DnewVersion=${releaseVersion} -DgenerateBackupPoms=false"
+                    }
+                }
+                script {
+                    sh "git add '*pom.xml'"
+                    sh "git commit -m 'Commit before creating tag ${APP_NAME}-${releaseVersion}'"
+                    sh "git tag -a '${APP_NAME}-${releaseVersion}' -m '${APP_NAME}-${releaseVersion}'"
+                    sh "git push --tags https://x-access-token:${env.APP_TOKEN}@github.com/navikt/${env.APP_NAME}.git master"
+                }
+                script {
+                    withEnv(["PATH+MAVEN=${MAVEN_HOME}/bin"]) {
+                        sh "mvn clean deploy -DskipTests -B -e"
+                        sh "mvn versions:set -B -DnewVersion=${nextVersion} -DgenerateBackupPoms=false"
+                    }
+                }
+                script {
+                    sh "git add '*pom.xml'"
+                    sh "git commit -m 'Updated version to ${nextVersion} after release'"
+                    sh "git push https://x-access-token:${env.APP_TOKEN}@github.com/navikt/${env.APP_NAME}.git master"
+                }
             }
         }
+    }
 
-        github.commitStatus("navikt-ci-oauthtoken", "navikt/ebcdicutil", 'continuous-integration/jenkins', commitHash, 'success', "Build #${env.BUILD_NUMBER} has finished")
-        slackSend([
-            color: 'good',
-            message: "Build <${env.BUILD_URL}|#${env.BUILD_NUMBER}> (<${commitUrl}|${commitHashShort}>) of ${project}/${application}@master by ${committer} passed"
-        ])
-    } catch (e) {
-        github.commitStatus("navikt-ci-oauthtoken", "navikt/ebcdicutil", 'continuous-integration/jenkins', commitHash, 'failure', "Build #${env.BUILD_NUMBER} has failed")
-        slackSend([
-            color: 'danger',
-            message: "Build <${env.BUILD_URL}|#${env.BUILD_NUMBER}> (<${commitUrl}|${commitHashShort}>) of ${project}/${application}@master by ${committer} failed"
-        ])
-
-        throw e
+    post {
+        success {
+            script {
+                github.commitStatus("success", "navikt/$env.APP_NAME", env.APP_TOKEN, env.COMMIT_HASH_LONG)
+                slackSend([color  : 'good', message: "Successful $latestStage $env.APP_NAME:<https://github.com/navikt/$env.APP_NAME/commit/$COMMIT_HASH_LONG|`$COMMIT_HASH_SHORT`>"])
+            }
+        }
+        failure {
+            script {
+                github.commitStatus("failure", "navikt/$env.APP_NAME", env.APP_TOKEN, env.COMMIT_HASH_LONG)
+                slackSend([color  : 'danger', message: "Failed to $latestStage $env.APP_NAME:<https://github.com/navikt/$env.APP_NAME/commit/$COMMIT_HASH_LONG|`$COMMIT_HASH_SHORT`>"])
+            }
+        }
     }
 }
