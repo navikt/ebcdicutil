@@ -5,7 +5,7 @@
 
 	<groupId>no.nav.pensjon.presys.util</groupId>
 	<artifactId>ebcdicutil</artifactId>
-	<version>540-SNAPSHOT</version>
+	<version>541-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>ebcdicutil</name>
