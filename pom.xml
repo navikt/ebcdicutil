@@ -55,16 +55,10 @@
 
 	<distributionManagement>
 		<repository>
-			<id>iapp-releases</id>
-			<name>NAV Nexus3 Internal Repository</name>
-			<url>https://repo.adeo.no/repository/maven-releases</url>
+			<id>ebcdicutil</id>
+			<name>Navikt GitHub Packages</name>
+			<url>https://maven.pkg.github.com/navikt/ebcdicutil</url>
 		</repository>
-		<snapshotRepository>
-			<id>iapp-snapshots</id>
-			<name>NAV Nexus3 Snapshot Repository</name>
-			<url>https://repo.adeo.no/repository/maven-snapshots</url>
-			<uniqueVersion>false</uniqueVersion>
-		</snapshotRepository>
 	</distributionManagement>
 
 	<dependencies>
