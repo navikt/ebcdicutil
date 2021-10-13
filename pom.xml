@@ -53,20 +53,6 @@
 	</profiles>
 	<!-- END: Specific to mapping unit tests and covered code -->
 
-	<distributionManagement>
-		<repository>
-			<id>iapp-releases</id>
-			<name>NAV Nexus3 Internal Repository</name>
-			<url>https://repo.adeo.no/repository/maven-releases</url>
-		</repository>
-		<snapshotRepository>
-			<id>iapp-snapshots</id>
-			<name>NAV Nexus3 Snapshot Repository</name>
-			<url>https://repo.adeo.no/repository/maven-snapshots</url>
-			<uniqueVersion>false</uniqueVersion>
-		</snapshotRepository>
-	</distributionManagement>
-
 	<dependencies>
 		<dependency>
 			<groupId>net.sf.jt400</groupId>
