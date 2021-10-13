@@ -53,6 +53,14 @@
 	</profiles>
 	<!-- END: Specific to mapping unit tests and covered code -->
 
+	<distributionManagement>
+		<repository>
+			<id>ebcdicutil</id>
+			<name>Navikt GitHub Packages</name>
+			<url>https://maven.pkg.github.com/navikt/ebcdicutil</url>
+		</repository>
+	</distributionManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>net.sf.jt400</groupId>
